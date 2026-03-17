@@ -1,0 +1,12 @@
+{
+  "name": "mi-api",
+  "version": "1.0.0",
+  "description": "API simple para Docker y Kubernetes",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
