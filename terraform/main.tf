@@ -1,64 +1,52 @@
-terraform {
-  required_providers {
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.25"
-    }
-  }
-}
-
-provider "kubernetes" {
-  config_path = "~/.kube/config"
-}
-
 resource "kubernetes_namespace" "mi_api_ns" {
   metadata {
-    name = "mi-api-ns"
+    name = var.namespace_name
   }
 }
 
 resource "kubernetes_deployment" "mi_api" {
+  depends_on = [kubernetes_namespace.mi_api_ns]
   metadata {
-    name      = "mi-api"
+    name      = var.app_name
     namespace = kubernetes_namespace.mi_api_ns.metadata[0].name
     labels = {
-      app = "mi-api"
+      app = var.app_name
     }
   }
 
   spec {
-    replicas = 3
+    replicas = var.replicas
 
     selector {
       match_labels = {
-        app = "mi-api"
+        app = var.app_name
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "mi-api"
+          app = var.app_name
         }
       }
 
       spec {
         container {
-          name  = "mi-api"
-          image = "luher/mi-api:latest"
+          name  = var.app_name
+          image = var.image
 
           port {
-            container_port = 3000
+            container_port = var.container_port
           }
 
           resources {
             requests = {
-              cpu    = "100m"
-              memory = "128Mi"
+              cpu    = var.cpu_request
+              memory = var.memory_request
             }
             limits = {
-              cpu    = "500m"
-              memory = "256Mi"
+              cpu    = var.cpu_limit
+              memory = var.memory_limit
             }
           }
         }
@@ -68,21 +56,22 @@ resource "kubernetes_deployment" "mi_api" {
 }
 
 resource "kubernetes_service" "mi_api_service" {
+  depends_on = [kubernetes_namespace.mi_api_ns]
   metadata {
-    name      = "mi-api-service"
+    name      = "${var.app_name}-service"
     namespace = kubernetes_namespace.mi_api_ns.metadata[0].name
   }
 
   spec {
     selector = {
-      app = "mi-api"
+      app = var.app_name
     }
 
     port {
-      port        = 80
-      target_port = 3000
+      port        = var.service_port
+      target_port = var.container_port
     }
 
-    type = "NodePort"
+    type = var.service_type
   }
 }
